@@ -1,24 +1,33 @@
 #include <helpers.h>
-#include <unistd.h>
 
-ssize_t read(int fd, void *buf, size_t count)
+ssize_t read_(int fd, void *buf, size_t count)
 {
-    int result;
-    size_t icount = count;
-    while (icount > 0 && (result = read(fd, buf, icount)) > 0) {
-        buf += result;
-        icount -= result;
-    }
-    return count - icount;
+    size_t icount = 0;
+    size_t result;
+
+    do {
+        result = read(fd, buf + icount, icount);
+        if (result == -1) {
+            return -1;
+        }
+        icount += result;
+    } while (icount < count && result > 0);
+
+    return icount;
 }
 
-ssize_t write(int fd, const void *buf, size_t count)
+ssize_t write_(int fd, const void *buf, size_t count)
 {
-    int result;
-    size_t icount = count;
-    while (icount > 0 && (result = write(fd, buf, icount)) > 0) {
-        buf += result;
-        icount -= result;
-    }
-    return count - icount;
+    size_t icount = 0;
+    size_t result;
+
+    do {
+        result = write(fd, buf + icount, icount);
+        if (result == -1) {
+            return -1;
+        }
+        icount += result;
+    } while (icount < count && result > 0);
+
+    return icount;
 }
