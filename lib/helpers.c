@@ -2,24 +2,24 @@
 
 ssize_t read_(int fd, void *buf, size_t count)
 {
-    size_t icount = 0;
-    size_t result;
+    size_t icount = count;
+    int result;
 
     do {
-        result = read(fd, buf + icount, count);
+        result = read(fd, buf + count - icount, icount);
         if (result == -1) {
             return -1;
         }
-        icount += result;
-    } while (icount < count && result > 0);
+        icount -= result;
+    } while (icount > 0 && result > 0);
 
-    return icount;
+    return count - icount;
 }
 
 ssize_t read_until(int fd, void *buf, size_t count, char delimiter)
 {
     size_t icount = 0;
-    size_t result;
+    int result;
 
     do {
         result = read(fd, buf + icount, 1);
@@ -35,7 +35,7 @@ ssize_t read_until(int fd, void *buf, size_t count, char delimiter)
 ssize_t write_(int fd, const void *buf, size_t count)
 {
     size_t icount = 0;
-    size_t result;
+    int result;
 
     do {
         result = write(fd, buf + icount, count);
