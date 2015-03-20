@@ -1,10 +1,14 @@
-CC = gcc
-EXECS = cat/cat revwords/revwords
+MAKE_ = make -C
+DIRS_ = lib/ cat/ revwords/
+MAKE = $(patsubst %,$(MAKE_) %\n,$(DIRS_))
+CLEAN_ = make clean - C
 
-all: $(EXECS)
+all:
+	make -C lib/
+	make -C cat/
+	make -C revwords/
 
-cat/cat:
-	$(MAKE) -C $(dir $@) $(notdir $@)
-
-revwords/revwords:
-	$(MAKE) -C $(dir $@) $(notdir $@)
+clean:
+	make clean -C lib/
+	make clean -C cat/
+	make clean -C revwords/
