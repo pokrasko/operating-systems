@@ -27,4 +27,8 @@ int main(int argc, char** argv)
 			printf("\n");
 		}
 	}
+
+	char* arg[] = {"ls", "/bin", NULL};
+	int res = spawn("ls", arg);
+	printf("\n");
 }
