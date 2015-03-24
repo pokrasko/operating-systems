@@ -1,14 +1,12 @@
 MAKE_ = make -C
-DIRS_ = lib/ cat/ revwords/
-MAKE = $(patsubst %,$(MAKE_) %\n,$(DIRS_))
-CLEAN_ = make clean - C
+DIRS_ = lib/ cat/ revwords/ filter/
+WILDCARD = $(wildcard $(VAR))
+CLEAN_ = make clean -C
+MAKE = $(foreach VAR,$(DIRS_),$(MAKE_) $(WILDCARD);)
+CLEAN = $(foreach VAR,$(DIRS_),$(CLEAN_) $(WILDCARD);)
 
 all:
-	make -C lib/
-	make -C cat/
-	make -C revwords/
+	$(MAKE)
 
 clean:
-	make clean -C lib/
-	make clean -C cat/
-	make clean -C revwords/
+	$(CLEAN)

@@ -1,15 +1,8 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <errno.h>
-
 #include <helpers.h>
 
 int count, deleted, offset, same, start;
 char buf[4097];
 char* word;
-
-void error(const char* msg);
 
 int main(int argc, char **args)
 {
@@ -25,7 +18,7 @@ int main(int argc, char **args)
 
 	for (count = read_(STDIN_FILENO, buf + offset, sizeof(buf) - offset); count > 0; count = read_(STDIN_FILENO, buf + offset, sizeof(buf) - offset)) {
 		if (count == -1) {
-			error(strerror(errno));
+			thiserror();
 			return 1;
 		}
 
@@ -59,10 +52,4 @@ int main(int argc, char **args)
 	}
 
 	return 0;
-}
-
-void error(const char* msg)
-{
-	fprintf(stderr, "%s\n", msg);
-	exit(1);
 }

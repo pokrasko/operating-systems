@@ -1,5 +1,11 @@
 #include <helpers.h>
 
+void error(const char* msg)
+{
+	fprintf(stderr, "%s\n", msg);
+	exit(1);
+}
+
 ssize_t read_(int fd, void *buf, size_t count)
 {
     size_t icount = count;
@@ -30,6 +36,27 @@ ssize_t read_until(int fd, void *buf, size_t count, char delimiter)
     } while (icount < count && result > 0 && ((char *) buf)[icount - 1] != delimiter);
 
     return icount;
+}
+
+int spawn(const char* file, char* const argv[])
+{
+	pid_t pid = fork();
+	if (pid != 0) {
+		int status;
+		if (wait(&status) != -1) {
+			return status;
+		} else {
+			return -1;
+		}
+	} else {
+		execvp(file, argv);
+		return -1;
+	}
+}
+
+void thiserror()
+{
+	error(strerror(errno));
 }
 
 ssize_t write_(int fd, const void *buf, size_t count)

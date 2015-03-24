@@ -13,6 +13,7 @@ all: $(NAME)
 clean:
 	rm -f $(NAME)
 	rm -f $(NAME).o
+	make clean -C $(LIBDIR)
 
 $(NAME): $(NAME).c $(LIBS)
 	$(CC) $(CFLAGS) $(LDFLAGS) $< -o $@

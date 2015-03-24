@@ -1,14 +1,4 @@
 #include <helpers.h>
-#include <errno.h>
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
-
-void error(const char* msg)
-{
-    fprintf(stderr, "%s\n", msg);
-    exit(1);
-}
 
 int main()
 {

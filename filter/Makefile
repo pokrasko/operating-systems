@@ -1,11 +1,11 @@
 CC = gcc
-NAME = delwords
+NAME = filter
 
 LIBDIR = ../lib
 LIBS_ = libhelpers.so
 LIBS = $(patsubst %,$(LIBDIR)/%,$(LIBS_))
 
-CFLAGS = -std=c99 -I$(LIBDIR)
+CFLAGS = -g -std=c99 -I$(LIBDIR)
 LDFLAGS = -L$(LIBDIR) -Wl,-rpath=../lib -lhelpers
 
 all: $(NAME)
