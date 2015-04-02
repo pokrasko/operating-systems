@@ -6,20 +6,26 @@ void error(const char* msg)
 	exit(1);
 }
 
+int read__(int fd, void* buf, size_t count)
+{
+	ssize_t icount = count;
+	ssize_t result;
+
+	do {
+		result = read(fd, buf + count - icount, icount);
+		if (result == -1) {
+			return icount - count;
+		}
+		icount -= result;
+	} while (icount > 0 && result > 0);
+
+	return count - icount;
+}
+
 ssize_t read_(int fd, void *buf, size_t count)
 {
-    size_t icount = count;
-    int result;
-
-    do {
-        result = read(fd, buf + count - icount, icount);
-        if (result == -1) {
-            return -1;
-        }
-        icount -= result;
-    } while (icount > 0 && result > 0);
-
-    return count - icount;
+    int result = read__(fd, buf, count);
+	return (result < 0) ? -1 : result;
 }
 
 ssize_t read_until(int fd, void *buf, size_t count, char delimiter)
@@ -59,18 +65,24 @@ void thiserror()
 	error(strerror(errno));
 }
 
+int write__(int fd, const void* buf, size_t count)
+{
+	ssize_t icount = count;
+	ssize_t result;
+
+	do {
+		result = write(fd, buf + count - icount, icount);
+		if (result == -1) {
+			return icount - count;
+		}
+		icount -= result;
+	} while (icount > 0 && result > 0);
+	
+	return count - icount;
+}
+
 ssize_t write_(int fd, const void *buf, size_t count)
 {
-    size_t icount = 0;
-    int result;
-
-    do {
-        result = write(fd, buf + icount, count);
-        if (result == -1) {
-            return -1;
-        }
-        icount += result;
-    } while (icount < count && result > 0);
-
-    return icount;
+	ssize_t result = write__(fd, buf, count);
+	return (result < 0) ? -1 : result;
 }
