@@ -21,5 +21,7 @@ struct execargs_t {
 	char** words;
 };
 
+typedef struct execargs_t execargs_t;
+
 int exec(execargs_t* args);
 int runpiped(execargs_t** programs, size_t n);

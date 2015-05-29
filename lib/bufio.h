@@ -5,7 +5,7 @@
 typedef int fd_t;
 
 struct buf_t {
-	void* data;
+	char* data;
 	size_t capacity;
 	size_t size;
 };
@@ -16,3 +16,4 @@ size_t buf_capacity(struct buf_t*);
 size_t buf_size(struct buf_t*);
 ssize_t buf_fill(fd_t, struct buf_t*, size_t);
 ssize_t buf_flush(fd_t, struct buf_t*, size_t);
+ssize_t buf_readline(fd_t, struct buf_t*, char*, size_t);

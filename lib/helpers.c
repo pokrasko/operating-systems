@@ -1,4 +1,7 @@
+#define _GNU_SOURCE
 #include <helpers.h>
+#include <fcntl.h>
+#include <unistd.h>
 
 void error(const char* msg)
 {
@@ -45,6 +48,7 @@ ssize_t read_until(int fd, void *buf, size_t count, char delimiter)
 				break;
 			}
 		}
+		icount += result;
 	} while (icount < count && result > 0 && !found);
 
     return icount;
@@ -93,33 +97,57 @@ ssize_t write_(int fd, const void *buf, size_t count)
 	return (result < 0) ? -1 : result;
 }
 
-int exec(execargs_t* args)
+int exec(struct execargs_t* args)
 {
-	spawn(args->words[0], args->words);
+	return spawn(args->words[0], args->words);
 }
 
-void endhandler(int signum)
+void pipe_handler(int signum)
 {
-	exit(0);
+	printf("sigpipe catched\n");
+	exit(-1);
 }
 
 int runpiped(execargs_t** programs, size_t n)
 {
-	struct sigaction sa;
-	sigemptyset(&sa.sa_mask);
-	sa.sa_handler = endhandler;
+	sigset_t mask;
+	sigemptyset(&mask);
+	sigaddset(&mask, SIGCHLD);
+	sigaddset(&mask, SIGINT);
+	sigprocmask(SIG_BLOCK, &mask, NULL);
+
+	struct sigaction sc, si;
+	sigaction(SIGINT, NULL, &si);
+	sigaction(SIGCHLD, NULL, &sc);
 
 	pid_t pids[n];
 	int pipes[n - 1][2];
 
 	for (int i = 0; i < n - 1; ++i) {
-		if (pipe(pipes[i]) == -1) {
+		if (pipe2(pipes[i], O_CLOEXEC) == -1) {
+			for (int j = 0; j < i; ++j) {
+				close(pipes[j][0]);
+				close(pipes[j][1]);
+			}
 			return -1;
 		}
 	}
+
+	int alive = 0;
 	for (int i = 0; i < n; ++i) {
 		pids[i] = fork();
 		if (pids[i] == 0) {
+			sigprocmask(SIG_UNBLOCK, &mask, NULL);
+			sigaction(SIGINT, &si, NULL);
+			sigaction(SIGCHLD, &sc, NULL);
+			//struct sigaction sa;
+			//sigset_t mask2;
+			//sigemptyset(&mask2);
+			//sigaddset(&mask2, SIGPIPE);
+			//sa.sa_mask = mask2;
+			//sa.sa_handler = pipe_handler;
+			//sigaction(SIGPIPE, &sa, NULL);
+
 			if (i != 0) {
 				dup2(pipes[i - 1][0], 0);
 			}
@@ -131,38 +159,41 @@ int runpiped(execargs_t** programs, size_t n)
 				close(pipes[j][1]);
 			}
 
-			if (sigaction(SIGPIPE, &sa, NULL) == -1) {
-				return -1;
-			}
-			execvp(programs[i][0], programs[0]);
+			execvp(programs[i]->words[0], programs[i]->words);
+			exit(-1);
+		} else {
+			++alive;
+			//printf("Now alive is %d, pid = %d\n", alive, pids[i]);
 		}
 	}
 
-	sigset_t mask;
 	siginfo_t info;
-	sigemptyset(&mask);
-	sigaddset(&mask, SIGCHLD);
-	sigaddset(&mask, SIGINT);
-	sigprocmask(SIG_BLOCK, &mask, NULL);
-
-	if (sigaction(SIGINT, &sa, NULL) == -1) {
-		return -1;
-	}
-
 	while (1) {
 		if (sigwaitinfo(&mask, &info) == -1) {
-			continue;
+			return -1;
 		}
 		switch (info.si_signo) {
 		case SIGCHLD:
-			for (int i = 0; i < n; ++i) {
-				if (info.si_pid == pid[i]) {
-					continue;
-				}
-				if (kill(pids[i], SIGINT) != 0) {
-					return -1;
-				}
+			--alive;
+			//printf("pid = %d killed, now alive is %d\n", info.si_pid, alive);
+			if (alive > 0) {
+				break;
 			}
+
+			sigaction(SIGINT, &si, NULL);
+			sigaction(SIGCHLD, &sc, NULL);
+			sigprocmask(SIG_UNBLOCK, &mask, NULL);
+
+			return 0;
+		case SIGINT:
+			for (size_t i = 0; i < n; ++i) {
+				kill(pids[i], SIGTERM);
+			}
+
+			sigaction(SIGINT, &si, NULL);
+			sigaction(SIGCHLD, &sc, NULL);
+			sigprocmask(SIG_UNBLOCK, &mask, NULL);
+
 			return 0;
 		}
 	}

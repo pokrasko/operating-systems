@@ -1,5 +1,5 @@
 MAKE_ = make -C
-DIRS_ = lib/ cat/ revwords/ filter/
+DIRS_ = cat/ delwords/ filter/ lib/ revwords/
 WILDCARD = $(wildcard $(VAR))
 CLEAN_ = make clean -C
 MAKE = $(foreach VAR,$(DIRS_),$(MAKE_) $(WILDCARD);)
