@@ -1,5 +1,4 @@
 #include <errno.h>
-#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -16,3 +15,11 @@ int spawn(const char* file, char* const argv[]);
 void thiserror();
 ssize_t write_(int fd, const void* buf, size_t count);
 int write__(int fd, const void* buf, size_t count);
+
+struct execargs_t {
+	int size;
+	char** words;
+};
+
+int exec(execargs_t* args);
+int runpiped(execargs_t** programs, size_t n);

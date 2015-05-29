@@ -11,11 +11,12 @@ int main(int argc, char** argv)
 	char* command;
 	int i, result;
 
-	args = malloc(argc * sizeof(char*));
+	args = malloc((argc + 1) * sizeof(char*));
 	for (i = 1; i < argc; ++i) {
 		args[i - 1] = argv[i];
 	}
 	args[argc - 1] = buf;
+	args[argc] = NULL;
 	command = args[0];
 
 	while ((result = read_until(STDIN_FILENO, buf, sizeof(buf), '\n')) > 0) {
@@ -28,7 +29,5 @@ int main(int argc, char** argv)
 		}
 	}
 
-	char* arg[] = {"ls", "/bin", NULL};
-	int res = spawn("ls", arg);
-	printf("\n");
+	return 0;
 }
