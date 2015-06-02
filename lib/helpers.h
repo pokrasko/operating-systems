@@ -1,9 +1,17 @@
+#define _GNU_SOURCE
+#define _POSIX_SOURCE
+
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <fcntl.h>
 
+#include <netinet/in.h>
+
+#include <sys/socket.h>
+#include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 

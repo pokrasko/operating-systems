@@ -2,9 +2,9 @@
 
 #define LIMIT 4096
 
-struct execargs_t* parse_args(const char* str, size_t size)
+execargs_t* parse_args(const char* str, size_t size)
 {
-	int count = 0;
+	size_t count = 0;
 	size_t i;
 	int is_space = 1;
 	for (size_t i = 0; i < size; ++i) {
@@ -24,14 +24,14 @@ struct execargs_t* parse_args(const char* str, size_t size)
 	if (count == 0) {
 		return NULL;
 	}
-	struct execargs_t* result = (struct execargs_t*) malloc(sizeof(struct execargs_t));
+	execargs_t* result = (struct execargs_t*) malloc(sizeof(struct execargs_t));
 	result->words = (char**) malloc((count + 1) * sizeof(char*));
 	memset(result->words + count * sizeof(char*), 0, sizeof(char*));
 	result->size = count;
 
 	is_space = 1;
 	count = 0;
-	int begin;
+	size_t begin;
 	for (size_t i = 0; i < size; ++i) {
 		if (str[i] != ' ') {
 			if (is_space == 1) {
@@ -58,19 +58,19 @@ struct execargs_t* parse_args(const char* str, size_t size)
 	return result;
 }
 
-struct execargs_t** parse_commands(const char* str, size_t size, int* number)
+execargs_t** parse_commands(const char* str, size_t size, size_t* number)
 {
-	int count = 1;
+	size_t count = 1;
 	for (size_t i = 0; i < size; ++i) {
 		if (str[i] == '|') {
 			++count;
 		}
 	}
 
-	struct execargs_t** result = (struct execargs_t**) malloc((count + 1) * sizeof(struct execargs_t*));
-	memset(result + count, 0, sizeof(struct execargs_t*));
+	execargs_t** result = (struct execargs_t**) malloc((count + 1) * sizeof(struct execargs_t*));
+	memset(result + count, 0, sizeof(execargs_t*));
 
-	int offset = 0;
+	size_t offset = 0;
 	count = 0;
 	for (size_t i = 0; i < size; ++i) {
 		if (str[i] == '|') {
@@ -94,11 +94,11 @@ struct execargs_t** parse_commands(const char* str, size_t size, int* number)
 
 int main()
 {
-	struct buf_t* buf = buf_new(LIMIT);
+	buf_t* buf = buf_new(LIMIT);
 	char str[LIMIT];
 	char welcome[1] = "$";
 	ssize_t result;
-	int count;
+	size_t count;
 
 	write_(STDOUT_FILENO, welcome, 1);
 	while ((result = buf_readline(STDIN_FILENO, buf, str, LIMIT)) > -2) {

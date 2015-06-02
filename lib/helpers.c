@@ -1,7 +1,4 @@
-#define _GNU_SOURCE
 #include <helpers.h>
-#include <fcntl.h>
-#include <unistd.h>
 
 void error(const char* msg)
 {
@@ -102,12 +99,6 @@ int exec(struct execargs_t* args)
 	return spawn(args->words[0], args->words);
 }
 
-void pipe_handler(int signum)
-{
-	printf("sigpipe catched\n");
-	exit(-1);
-}
-
 int runpiped(execargs_t** programs, size_t n)
 {
 	sigset_t mask;
@@ -117,15 +108,15 @@ int runpiped(execargs_t** programs, size_t n)
 	sigprocmask(SIG_BLOCK, &mask, NULL);
 
 	struct sigaction sc, si;
-	sigaction(SIGINT, NULL, &si);
 	sigaction(SIGCHLD, NULL, &sc);
+	sigaction(SIGINT, NULL, &si);
 
 	pid_t pids[n];
 	int pipes[n - 1][2];
 
-	for (int i = 0; i < n - 1; ++i) {
+	for (size_t i = 0; i < n - 1; ++i) {
 		if (pipe2(pipes[i], O_CLOEXEC) == -1) {
-			for (int j = 0; j < i; ++j) {
+			for (size_t j = 0; j < i; ++j) {
 				close(pipes[j][0]);
 				close(pipes[j][1]);
 			}
@@ -140,13 +131,6 @@ int runpiped(execargs_t** programs, size_t n)
 			sigprocmask(SIG_UNBLOCK, &mask, NULL);
 			sigaction(SIGINT, &si, NULL);
 			sigaction(SIGCHLD, &sc, NULL);
-			//struct sigaction sa;
-			//sigset_t mask2;
-			//sigemptyset(&mask2);
-			//sigaddset(&mask2, SIGPIPE);
-			//sa.sa_mask = mask2;
-			//sa.sa_handler = pipe_handler;
-			//sigaction(SIGPIPE, &sa, NULL);
 
 			if (i != 0) {
 				dup2(pipes[i - 1][0], 0);
@@ -154,7 +138,7 @@ int runpiped(execargs_t** programs, size_t n)
 			if (i < n - 1) {
 				dup2(pipes[i][1], 1);
 			}
-			for (int j = 0; j < n - 1; ++j) {
+			for (size_t j = 0; j < n - 1; ++j) {
 				close(pipes[j][0]);
 				close(pipes[j][1]);
 			}
@@ -163,38 +147,32 @@ int runpiped(execargs_t** programs, size_t n)
 			exit(-1);
 		} else {
 			++alive;
-			//printf("Now alive is %d, pid = %d\n", alive, pids[i]);
 		}
+	}
+	
+	for (size_t j = 0; j < n - 1; ++j) {
+		close(pipes[j][0]);
+		close(pipes[j][1]);
 	}
 
 	siginfo_t info;
-	while (1) {
+	while (alive) {
 		if (sigwaitinfo(&mask, &info) == -1) {
-			return -1;
+			continue;
 		}
-		switch (info.si_signo) {
-		case SIGCHLD:
+		if (info.si_signo == SIGCHLD) {
 			--alive;
-			//printf("pid = %d killed, now alive is %d\n", info.si_pid, alive);
-			if (alive > 0) {
-				break;
-			}
-
-			sigaction(SIGINT, &si, NULL);
-			sigaction(SIGCHLD, &sc, NULL);
-			sigprocmask(SIG_UNBLOCK, &mask, NULL);
-
-			return 0;
-		case SIGINT:
+		} else {
 			for (size_t i = 0; i < n; ++i) {
-				kill(pids[i], SIGTERM);
+				kill(pids[i], SIGKILL);
 			}
-
-			sigaction(SIGINT, &si, NULL);
-			sigaction(SIGCHLD, &sc, NULL);
-			sigprocmask(SIG_UNBLOCK, &mask, NULL);
-
-			return 0;
+			break;
 		}
 	}
+
+	sigaction(SIGINT, &si, NULL);
+	sigaction(SIGCHLD, &sc, NULL);
+	sigprocmask(SIG_UNBLOCK, &mask, NULL);
+
+	return 0;
 }

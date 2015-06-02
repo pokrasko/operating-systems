@@ -1,8 +1,8 @@
 #include <bufio.h>
 
-struct buf_t* buf_new(size_t capacity)
+buf_t* buf_new(size_t capacity)
 {
-	struct buf_t* result = (struct buf_t*) malloc(sizeof(struct buf_t));
+	buf_t* result = (struct buf_t*) malloc(sizeof(struct buf_t));
 	if (result == NULL) {
 		return NULL;
 	}
@@ -17,7 +17,7 @@ struct buf_t* buf_new(size_t capacity)
 	return result;
 }
 
-void buf_free(struct buf_t* buf)
+void buf_free(buf_t* buf)
 {
 #ifdef DEBUG
 	if (buf == NULL) {
@@ -29,7 +29,7 @@ void buf_free(struct buf_t* buf)
 	free(buf);
 }
 
-size_t buf_capacity(struct buf_t* buf)
+size_t buf_capacity(buf_t* buf)
 {
 #ifdef DEBUG
 	if (buf == NULL) {
@@ -40,7 +40,7 @@ size_t buf_capacity(struct buf_t* buf)
 	return buf->capacity;
 }
 
-size_t buf_size(struct buf_t* buf)
+size_t buf_size(buf_t* buf)
 {
 #ifdef DEBUG
 	if (buf == NULL) {
@@ -51,7 +51,7 @@ size_t buf_size(struct buf_t* buf)
 	return buf->size;
 }
 
-ssize_t buf_fill(fd_t fd, struct buf_t* buf, size_t required)
+ssize_t buf_fill(fd_t fd, buf_t* buf, size_t required)
 {
 #ifdef DEBUG
 	if (buf == NULL) {
@@ -68,7 +68,7 @@ ssize_t buf_fill(fd_t fd, struct buf_t* buf, size_t required)
 	}
 }
 
-ssize_t buf_flush(fd_t fd, struct buf_t* buf, size_t required)
+ssize_t buf_flush(fd_t fd, buf_t* buf, size_t required)
 {
 #ifdef DEBUG
 	if (buf == NULL) {
@@ -85,9 +85,9 @@ ssize_t buf_flush(fd_t fd, struct buf_t* buf, size_t required)
 	return (result < 0) ? -1 : result;
 }
 
-ssize_t buf_readline(fd_t fd, struct buf_t* buf, char* str, size_t limit)
+ssize_t buf_readline(fd_t fd, buf_t* buf, char* str, size_t limit)
 {
-	int eol_found = -1;
+	ssize_t eol_found = -1;
 	int eof_found = 0;
 	while (buf->size < buf->capacity) {
 		for (size_t i = 0; i < buf->size; ++i) {
