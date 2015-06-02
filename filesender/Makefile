@@ -5,7 +5,7 @@ LIBDIR = ../lib
 LIBS_ = libbufio.so
 LIBS = $(patsubst %,$(LIBDIR)/%,$(LIBS_))
 
-CFLAGS = -g -std=c99 -I$(LIBDIR)
+CFLAGS = -g -Wall -std=c99 -I$(LIBDIR)
 LDFLAGS = -L$(LIBDIR) -Wl,-rpath=../lib -lbufio -lhelpers
 
 all: $(NAME)

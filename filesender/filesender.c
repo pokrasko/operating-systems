@@ -1,21 +1,19 @@
 #define LIMIT 4096
 
-#include <netdb.h>
-#include <signal.h>
-
 #include <bufio.h>
 
 int main(int argc, char** argv) {
 	if (argc < 3) {
 		fprintf(stderr, "Usage: filesender <port> <file>");
+		exit(EXIT_FAILURE);
 	}
 
 	struct addrinfo hints;
-	struct addrinfo* result;
+	struct addrinfo *p, *result;
 	struct sockaddr_in c;
-	struct buf_t* buf;
+	socklen_t size = sizeof(c);
+	pid_t pid;
 	int f, fd, s;
-	int a;
 	int res, fail = 0;
 
 	memset(&hints, 0, sizeof(struct addrinfo));
@@ -25,12 +23,12 @@ int main(int argc, char** argv) {
 	hints.ai_flags = AI_PASSIVE;
 
 	if ((res = getaddrinfo(NULL, argv[1], &hints, &result)) != 0) {
-		fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(s));
+		fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(res));
 		exit(EXIT_FAILURE);
 	}
 
-	for (struct addrinfo* p = result; p != NULL; p = p->ai_next) {
-		if (socket(p->ai_family, p->ai_socktype, p->ai_protocol) == -1) {
+	for (p = result; p != NULL; p = p->ai_next) {
+		if ((s = socket(p->ai_family, p->ai_socktype | SOCK_CLOEXEC, p->ai_protocol)) == -1) {
 			continue;
 		}
 
@@ -54,46 +52,54 @@ int main(int argc, char** argv) {
 		goto listen_fail;
 	}
 
-	if ((fd = accept(s, (struct sockaddr*) &c, sizeof(c))) == -1) {
-		fprintf(stderr, "Could not accept\n");
-		fail = 1;
-		goto accept_fail;
-	}
-
-	if ((f = open(argv[2], O_RDONLY)) == -1) {
-		fprintf(stderr, "Could not open a file\n");
-		fail = 1;
-		goto file_fail;
-	}
-
-	if ((buf = buf_new(LIMIT)) == NULL) {
-		fprintf(stderr, "Could not create a buffer\n");
-		fail = 1;
-		goto buf_fail;
-	}
-
-	while ((a = buf_fill(f, buf, LIMIT)) != 0) {
-		if (a == -1) {
-			fprintf(stderr, "Could not fill a buffer\n");
+	while (1) {
+		if ((fd = accept(s, (struct sockaddr*) &c, &size)) == -1) {
+			fprintf(stderr, "Could not accept\n");
 			fail = 1;
-			goto fill_fail;
+			goto accept_fail;
 		}
-		while (buf_size(buf) != 0) {
-			if (buf_flush(fd, buf, buf_size(buf)) != -1) {
-				fprintf(stderr, "Could not flush a buffer\n");
-				fail = 1;
-				goto flush_fail;
+
+		if ((pid = fork()) == 0) {
+			printf("Child was born\n");
+			if ((f = open(argv[2], O_RDONLY)) == -1) {
+				fprintf(stderr, "Could not open a file\n");
+				exit(0);
 			}
+
+			struct buf_t* buf;
+			if ((buf = buf_new(LIMIT)) == NULL) {
+				fprintf(stderr, "Could not create a buffer\n");
+				close(f);
+				exit(0);
+			}
+	
+			int a;
+			while ((a = buf_fill(f, buf, LIMIT)) != 0) {
+				if (a == -1) {
+					fprintf(stderr, "Could not fill a buffer\n");
+					buf_free(buf);
+					close(f);
+					exit(0);
+				}
+				while (buf_size(buf) != 0) {
+					if (buf_flush(fd, buf, buf_size(buf)) == -1) {
+						fprintf(stderr, "Could not flush a buffer\n");
+						buf_free(buf);
+						close(f);
+						exit(0);
+					}
+				}
+			}
+
+			buf_free(buf);
+			close(f);
+			printf("Child died\n");
+			exit(0);
 		}
+		
+		close(fd);
 	}
 
-flush_fail:
-fill_fail:
-	buf_free(buf);
-buf_fail:
-	close(f);
-file_fail:
-	close(fd);
 accept_fail:
 listen_fail:
 	close(s);
@@ -101,5 +107,5 @@ listen_fail:
 		exit(EXIT_FAILURE);
 	}
 
-	return 0;
+    return 0;
 }

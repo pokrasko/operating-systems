@@ -1,7 +1,7 @@
 CC = gcc
 NAMES = helpers bufio
 LIBS = $(patsubst %,lib%.so,$(NAMES))
-CFLAGS = -g -Wall -fpic -I.
+CFLAGS = -g -Wall -std=c99 -fpic -I.
 LDFLAGS = -shared
 
 all: $(LIBS)
