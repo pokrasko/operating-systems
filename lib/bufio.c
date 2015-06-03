@@ -68,6 +68,26 @@ ssize_t buf_fill(fd_t fd, buf_t* buf, size_t required)
 	}
 }
 
+ssize_t buf_fill_at_once(fd_t fd, buf_t* buf, size_t required)
+{
+#ifdef DEBUG
+	if (buf == NULL) {
+		abort();
+	}
+#endif
+
+	if (buf->size < required) {
+		ssize_t result = read(fd, buf->data + buf->size, required - buf->size);
+		if (result == -1) {
+			return -1;
+		}
+		buf->size += result;
+		return result;
+	} else {
+		return 0;
+	}
+}
+
 ssize_t buf_flush(fd_t fd, buf_t* buf, size_t required)
 {
 #ifdef DEBUG
