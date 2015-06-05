@@ -1,5 +1,5 @@
 CC = gcc
-NAME = forking
+NAMES = forking polling
 
 LIBDIR = ../lib
 LIBS_ = libbufio.so
@@ -8,14 +8,17 @@ LIBS = $(patsubst %,$(LIBDIR)/%,$(LIBS_))
 CFLAGS = -g -Wall -std=c99 -I$(LIBDIR)
 LDFLAGS = -L$(LIBDIR) -Wl,-rpath=../lib -lbufio -lhelpers
 
-all: $(NAME)
+all: $(NAMES)
 
 clean:
-	rm -f $(NAME)
-	rm -f $(NAME).o
+	rm -f $(NAMES)
+	rm -f $(patsubst %,%.o,$(NAMES))
 	make clean -C $(LIBDIR)
 
-$(NAME): $(NAME).c $(LIBS)
+forking: forking.c $(LIBS)
+	$(CC) $(CFLAGS) $(LDFLAGS) $< -o $@
+
+polling: polling.c $(LIBS)
 	$(CC) $(CFLAGS) $(LDFLAGS) $< -o $@
 
 $(LIBS):
