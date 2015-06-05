@@ -111,7 +111,12 @@ int wait_for(int server) {
 
 	//Checking server descriptors
 	if (opened < MAX_CLIENTS && pollfd[server].revents & POLLIN) {
-		return accept(pollfd[server].fd, NULL, NULL);
+		if ((result = accept(pollfd[server].fd, NULL, NULL)) == -1) {
+			fprintf(stderr, "Couldn't accept on file descriptor %d\n", pollfd[server].fd);
+			return -1;
+		} else {
+			return result;
+		}
 	}
 
 	//Checking client descriptors
@@ -209,7 +214,6 @@ int main(int argc, char** argv) {
 				exit(EXIT_FAILURE);
 			}
 		}
-		pollfd[i].events = POLLIN;
 	}
 
 	while (1) {

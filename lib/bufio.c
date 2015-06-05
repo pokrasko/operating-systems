@@ -117,9 +117,12 @@ ssize_t buf_flush_at_once(fd_t fd, buf_t* buf, size_t required)
 		required = buf->size;
 	}
 	ssize_t result = write(fd, buf->data, required);
-	buf->size -= abs(result);
-	memcpy(buf->data, buf->data + abs(result), buf->size);
-	return (result < 0) ? -1 : result;
+	if (result == -1) {
+		return -1;
+	}
+	buf->size -= result;
+	memcpy(buf->data, buf->data + result, buf->size);
+	return result;
 }
 
 ssize_t buf_readline(fd_t fd, buf_t* buf, char* str, size_t limit)
