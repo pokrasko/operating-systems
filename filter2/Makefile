@@ -1,5 +1,5 @@
 CC = gcc
-NAME = filter
+NAME = filter2
 
 LIBDIR = ../lib
 LIBS_ = libbufio.so

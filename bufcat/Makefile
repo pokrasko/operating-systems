@@ -16,7 +16,7 @@ clean:
 	make clean -C $(LIBDIR)
 
 $(NAME): $(NAME).c $(LIBS)
-	$(CC) $(CFLAGS) $(LDFLAGS) $< -o $@
+	$(CC) $(CFLAGS) $< -o $@ $(LDFLAGS)
 
 $(LIBS):
 	$(MAKE) -C $(dir $@) $(notdir $@)

@@ -60,7 +60,7 @@ ssize_t buf_fill(fd_t fd, buf_t* buf, size_t required)
 #endif
 
 	if (buf->size < required) {
-		ssize_t result = read__(fd, buf->data + buf->size, required - buf->size);
+		ssize_t result = read__(fd, buf->data + buf->size, required - buf->size, buf->capacity - buf->size);
 		buf->size += abs(result);
 		return (result < 0) ? -1 : result;
 	} else {
@@ -99,7 +99,7 @@ ssize_t buf_flush(fd_t fd, buf_t* buf, size_t required)
 	if (required > buf->size) {
 		required = buf->size;
 	}
-	ssize_t result = write__(fd, buf->data, required);
+	ssize_t result = write__(fd, buf->data, required, buf->size);
 	buf->size -= abs(result);
 	memcpy(buf->data, buf->data + abs(result), buf->size);
 	return (result < 0) ? -1 : result;
@@ -125,56 +125,42 @@ ssize_t buf_flush_at_once(fd_t fd, buf_t* buf, size_t required)
 	return result;
 }
 
-ssize_t buf_readline(fd_t fd, buf_t* buf, char* str, size_t limit)
+ssize_t buf_readline(fd_t fd, buf_t* buf, char* str, size_t required)
 {
-	ssize_t eol_found = -1;
-	int eof_found = 0;
-	while (buf->size < buf->capacity) {
-		for (size_t i = 0; i < buf->size; ++i) {
+	size_t offset = 0;
+	size_t result;
+	int found = 0;
+
+	//printf("fuck\n");
+	do {
+		size_t i;
+		for (i = offset; i < buf->size; ++i) {
 			if (buf->data[i] == '\n') {
-				eol_found = i;
+				found = 1;
 				break;
 			}
 		}
-		if (eol_found >= 0) {
-			break;
+		if (found) {
+			//printf("buf->size = %d, found symbol number = %d\n", buf->size, i);
+			memmove(str, buf->data, i);
+			buf->size -= i + 1;
+			memmove(buf->data, buf->data + i + 1, buf->size);
+			//printf("buf->size = %d\n", buf->size);
+			return i;
 		}
-		ssize_t result = read_until(fd, buf->data + buf->size, buf->capacity - buf->size, '\n');
+		offset = buf->size;
+
+		result = read(fd, buf->data, required - buf->size);
+		buf->size += result;
+		//printf("result = %d\n", result);
 		if (result == -1) {
 			return -1;
-		} else if (result == 0) {
-			eof_found = 1;
-			break;
 		}
-		buf->size += result;
-	}
+	} while (buf->size < required && result > 0);
 
-	if (eol_found >= 0 || limit < buf->size || eof_found) {
-		if (eof_found) {
-			return -2;
-		} else if (limit < eol_found) {
-			eol_found = limit;
-		} else if (eof_found) {
-			eol_found = buf->size;
-		}
-		memmove(str, buf->data, eol_found);
-		if (eol_found < buf->size && buf->data[eol_found] == '\n') {
-			--buf->size;
-		}
-		buf->size -= eol_found;
-		memmove(buf->data, buf->data + eol_found, buf->size);
-		return eol_found;
-	} else {
-		memmove(str, buf->data, buf->size);
-		ssize_t result = buf->size;
-		str += result;
-		limit -= result;
-		buf->size = 0;
-		ssize_t recurresult = buf_readline(fd, buf, str, limit);
-		if (recurresult == -1) {
-			return -1;
-		} else {
-			return result + recurresult;
-		}
-	}
+	memmove(str, buf->data, buf->size);
+	result = buf->size;
+	buf->size = 0;
+	//printf("result = %d\n", result);
+	return result;
 }
