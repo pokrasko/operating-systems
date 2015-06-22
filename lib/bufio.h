@@ -19,3 +19,5 @@ ssize_t buf_fill_at_once(fd_t, buf_t*, size_t);
 ssize_t buf_flush(fd_t, buf_t*, size_t);
 ssize_t buf_flush_at_once(fd_t, buf_t*, size_t);
 ssize_t buf_readline(fd_t, buf_t*, char*, size_t);
+ssize_t buf_readline_(buf_t*, char*, size_t);
+ssize_t buf_writeline(buf_t*, char*, size_t);

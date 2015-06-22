@@ -178,3 +178,26 @@ ssize_t buf_readline(fd_t fd, buf_t* buf, char* str, size_t limit)
 		}
 	}
 }
+
+ssize_t buf_readline_(buf_t* buf, char* str, size_t size) {
+	for (size_t i = 0; i < buf->size; ++i) {
+		if (buf->data[i] == '\n') {
+			memmove(str, buf->data, i);
+			buf->size -= i + 1;
+			memmove(buf->data, buf->data + i + 1, buf->size);
+			return i;
+		}
+	}
+
+	return 0;
+}
+
+ssize_t buf_writeline(buf_t* buf, char* str, size_t size) {
+	if (size > buf->capacity - buf->size) {
+		return -1;
+	}
+
+	memmove(buf->data + buf->size, str, size);
+	buf->size += size;
+	return 0;
+}

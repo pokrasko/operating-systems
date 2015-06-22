@@ -1,5 +1,5 @@
 CC = gcc
-NAMES = forking polling
+NAMES = forking polling multicast
 
 LIBDIR = ../lib
 LIBS_ = libbufio.so

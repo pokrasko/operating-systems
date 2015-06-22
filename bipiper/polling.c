@@ -121,7 +121,7 @@ int wait_for(int server) {
 
 	//Checking client descriptors
 	for (int i = 1; i < opened + 1; ++i) {
-		if ((pollfd[2 * i].revents | pollfd[2 * i + 1].revents) & POLLHUP) {
+		if ((pollfd[2 * i].revents | pollfd[2 * i + 1].revents) & (POLLHUP | POLLERR)) {
 			return -2 * i;
 		}
 		int e = 0;
@@ -141,6 +141,13 @@ int wait_for(int server) {
 void close_client(int client) {
 	if (client <= 0) {
 		return;
+	}
+
+	if (!(pollfd[client].revents & (POLLHUP | POLLERR))) {
+		buf_flush(pollfd[client].fd, buffs[client - 1], buf_size(buffs[client - 1]));
+	}
+	if (!(pollfd[client + 1].revents & (POLLHUP | POLLERR))) {
+		buf_flush(pollfd[client + 1].fd, buffs[client - 2], buf_size(buffs[client - 2]));
 	}
 
 	//Freeing data
