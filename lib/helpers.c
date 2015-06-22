@@ -6,25 +6,25 @@ void error(const char* msg)
 	exit(EXIT_FAILURE);
 }
 
-int read__(int fd, void* buf, size_t count)
+int read__(int fd, void* buf, size_t count1, size_t count2)
 {
-	ssize_t icount = count;
+	ssize_t icount = count2;
 	ssize_t result;
 
 	do {
-		result = read(fd, buf + count - icount, icount);
+		result = read(fd, buf + count2 - icount, icount);
 		if (result == -1) {
-			return icount - count;
+			return icount - count2;
 		}
 		icount -= result;
-	} while (icount > 0 && result > 0);
+	} while (count2 - icount < count1 && icount > 0 && result > 0);
 
-	return count - icount;
+	return count2 - icount;
 }
 
 ssize_t read_(int fd, void *buf, size_t count)
 {
-	int result = read__(fd, buf, count);
+	int result = read__(fd, buf, count, count);
 	return (result < 0) ? -1 : result;
 }
 
@@ -33,20 +33,24 @@ ssize_t read_until(int fd, void *buf, size_t count, char delimiter)
     size_t icount = 0;
     int found, i, result;
 
+	found = 0;
     do {
-		result = read(fd, buf + icount, count - icount);
-		if (result == -1) {
-			return -1;
-		}
-		found = 0;
 		for (i = 0; i < result; ++i) {
 			if (((char*) buf)[icount + i] == delimiter) {
 				found = 1;
 				break;
 			}
 		}
+		if (found) {
+			break;
+		}
+
+		result = read(fd, buf + icount, count - icount);
 		icount += result;
-	} while (icount < count && result > 0 && !found);
+		if (result == -1) {
+			return -1;
+		}
+	} while (icount < count && result > 0);
 
     return icount;
 }
@@ -56,13 +60,28 @@ int spawn(const char* file, char* const argv[])
 	pid_t pid = fork();
 	if (pid != 0) {
 		int status;
-		if (wait(&status) != -1) {
+		if (waitpid(pid, &status, 0) == -1) {
+			//printf("return -1\n");
+			return -1;
+		}
+		if (WIFEXITED(status)) {
+			//printf("return %d\n", status);
 			return status;
 		} else {
+			//printf("return -1\n");
 			return -1;
 		}
 	} else {
+		int null = open("/dev/null", O_WRONLY);
+		if (dup2(null, STDOUT_FILENO) == -1) {
+			return -1;
+		}
+		if (dup2(null, 2) == -1) {
+			return -1;
+		}
+
 		execvp(file, argv);
+		//printf("return -1\n");
 		return -1;
 	}
 }
@@ -72,25 +91,25 @@ void thiserror()
 	error(strerror(errno));
 }
 
-int write__(int fd, const void* buf, size_t count)
+int write__(int fd, const void* buf, size_t count1, size_t count2)
 {
-	ssize_t icount = count;
+	ssize_t icount = count2;
 	ssize_t result;
 
 	do {
-		result = write(fd, buf + count - icount, icount);
+		result = write(fd, buf + count2 - icount, icount);
 		if (result == -1) {
-			return icount - count;
+			return icount - count2;
 		}
 		icount -= result;
-	} while (icount > 0 && result > 0);
+	} while (count2 - icount < count1 && icount > 0 && result > 0);
 	
-	return count - icount;
+	return count2 - icount;
 }
 
 ssize_t write_(int fd, const void *buf, size_t count)
 {
-	ssize_t result = write__(fd, buf, count);
+	ssize_t result = write__(fd, buf, count, count);
 	return (result < 0) ? -1 : result;
 }
 
